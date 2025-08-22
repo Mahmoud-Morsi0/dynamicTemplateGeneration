@@ -1,5 +1,6 @@
 import PizZip from 'pizzip'
 import Docxtemplater from 'docxtemplater'
+// @ts-ignore - no types available for this module
 import ImageModule from 'docxtemplater-image-module-free'
 import { promises as fs } from 'fs'
 import { logger } from '../../utils/logger'
@@ -10,53 +11,160 @@ interface ImageOptions {
 }
 
 export class DocxRenderer {
-    private zip: PizZip
-    private doc: Docxtemplater
+    private zip!: PizZip
+    private doc!: Docxtemplater
+    private isManualMode: boolean = false
 
     constructor(buffer: Buffer) {
+        try {
+            this.zip = new PizZip(buffer)
+
+            // Configure image module
+            // @ts-ignore
+            const imageModule = new ImageModule({
+                centered: false,
+                fileType: 'docx',
+                getImage: async (tagValue: string) => {
+                    try {
+                        const response = await fetch(tagValue)
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch image: ${response.statusText}`)
+                        }
+                        const arrayBuffer = await response.arrayBuffer()
+                        return {
+                            width: 120,
+                            height: 40,
+                            data: Buffer.from(arrayBuffer),
+                            extension: '.png',
+                        }
+                    } catch (error) {
+                        logger.error('Error fetching image:', error)
+                        return null
+                    }
+                },
+                getSize: (img: any, tagValue: string, tagName: string) => {
+                    // Extract size from tag name or use defaults
+                    const sizeMatch = tagName.match(/width=(\d+).*height=(\d+)/)
+                    if (sizeMatch && sizeMatch[1] && sizeMatch[2]) {
+                        return [parseInt(sizeMatch[1]), parseInt(sizeMatch[2])]
+                    }
+                    return [120, 40] // Default size
+                },
+            })
+
+            // First preprocess the document to normalize formats
+            this.preprocessDocument()
+
+            // Initialize Docxtemplater with non-conflicting delimiters
+            this.doc = new Docxtemplater(this.zip, {
+                paragraphLoop: true,
+                linebreaks: true,
+                modules: [imageModule],
+                errorLogging: false,
+                delimiters: {
+                    start: '{{',
+                    end: '}}'
+                },
+                nullGetter() {
+                    return ''
+                }
+            })
+
+            logger.info('DocxRenderer initialized successfully')
+        } catch (error) {
+            logger.error('DocxRenderer initialization failed:', error)
+            if (error instanceof Error) {
+                if (error.message.includes('Multi error') || error.message.includes('duplicate')) {
+                    // Try a completely different approach - manual text replacement
+                    logger.warn('Docxtemplater failed, attempting manual rendering...')
+                    try {
+                        this.initializeManualRenderer(buffer)
+                        return
+                    } catch (manualError) {
+                        throw new Error('Document contains incompatible placeholder formats that cannot be processed automatically.')
+                    }
+                }
+                throw error
+            }
+            throw new Error('Failed to initialize document renderer')
+        }
+    }
+
+    private initializeManualRenderer(buffer: Buffer) {
+        logger.info('Initializing manual renderer for mixed placeholder formats')
         this.zip = new PizZip(buffer)
+        this.isManualMode = true
 
-        // Configure image module
-        const imageModule = new ImageModule({
-            centered: false,
-            fileType: 'docx',
-            getImage: async (tagValue: string) => {
-                try {
-                    const response = await fetch(tagValue)
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch image: ${response.statusText}`)
-                    }
-                    const arrayBuffer = await response.arrayBuffer()
-                    return {
-                        width: 120,
-                        height: 40,
-                        data: Buffer.from(arrayBuffer),
-                        extension: '.png',
-                    }
-                } catch (error) {
-                    logger.error('Error fetching image:', error)
-                    return null
-                }
-            },
-            getSize: (img: any, tagValue: string, tagName: string) => {
-                // Extract size from tag name or use defaults
-                const sizeMatch = tagName.match(/width=(\d+).*height=(\d+)/)
-                if (sizeMatch) {
-                    return [parseInt(sizeMatch[1]), parseInt(sizeMatch[2])]
-                }
-                return [120, 40] // Default size
-            },
-        })
+        // Preprocess document for manual rendering
+        this.preprocessDocument()
+        logger.info('Manual renderer initialized successfully')
+    }
 
-        this.doc = new Docxtemplater(this.zip, {
-            paragraphLoop: true,
-            linebreaks: true,
-            modules: [imageModule],
-        })
+    private preprocessDocument() {
+        try {
+            // Get the main document XML
+            const documentXml = this.zip.files['word/document.xml']
+            if (!documentXml) {
+                throw new Error('No document.xml found in DOCX file')
+            }
+
+            let xmlContent = documentXml.asText()
+            if (!xmlContent || xmlContent.trim().length === 0) {
+                throw new Error('Document XML content is empty')
+            }
+
+            logger.info('Starting document preprocessing for mixed placeholder formats')
+
+            // More comprehensive placeholder normalization
+            // Strategy: Convert ALL placeholders to double brace format consistently
+
+            // Step 1: Find and protect existing double braces with a very unique pattern
+            const protectedPatterns: Array<{ token: string; original: string }> = []
+            let protectedIndex = 0
+
+            // More precise pattern to protect existing double braces
+            xmlContent = xmlContent.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (match) => {
+                const token = `___DOCXRENDERER_PROTECTED_${protectedIndex++}_PROTECTED___`
+                protectedPatterns.push({ token, original: match })
+                logger.debug(`Protected double brace: ${match} -> ${token}`)
+                return token
+            })
+
+            // Step 2: Convert ALL remaining single braces to double braces
+            // This handles patterns like {company}, {Contract Date}, etc.
+            let convertedCount = 0
+            xmlContent = xmlContent.replace(/\{([^{}]+?)\}/g, (match, content) => {
+                convertedCount++
+                const converted = `{{${content.trim()}}}`
+                logger.debug(`Converting single brace: ${match} -> ${converted}`)
+                return converted
+            })
+
+            // Step 3: Restore the original double braces
+            protectedPatterns.forEach(({ token, original }) => {
+                xmlContent = xmlContent.replace(token, original)
+                logger.debug(`Restored protected: ${token} -> ${original}`)
+            })
+
+            // Step 4: Update the document XML in the zip
+            this.zip.file('word/document.xml', xmlContent)
+
+            logger.info(`Document preprocessing completed successfully:`)
+            logger.info(`- Protected ${protectedPatterns.length} existing double brace placeholders`)
+            logger.info(`- Converted ${convertedCount} single brace placeholders to double braces`)
+
+        } catch (error) {
+            logger.error('Document preprocessing failed:', error)
+            throw new Error(`Failed to preprocess document: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        }
     }
 
     public render(data: Record<string, any>): Buffer {
         try {
+            if (this.isManualMode) {
+                return this.renderManually(data)
+            }
+
             // Set the template variables
             this.doc.setData(data)
 
@@ -70,6 +178,50 @@ export class DocxRenderer {
         } catch (error) {
             logger.error('Error rendering document:', error)
             throw new Error(`Failed to render document: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        }
+    }
+
+    private renderManually(data: Record<string, any>): Buffer {
+        try {
+            logger.info('Performing manual text replacement rendering')
+
+            // Get the main document XML
+            const documentXml = this.zip.files['word/document.xml']
+            if (!documentXml) {
+                throw new Error('No document.xml found')
+            }
+
+            let xmlContent = documentXml.asText()
+
+            // Replace all placeholders manually
+            // Handle both {variable} and {{variable}} formats
+            Object.entries(data).forEach(([key, value]) => {
+                const stringValue = String(value || '')
+
+                // Replace both single and double brace formats
+                const singleBracePattern = new RegExp(`\\{\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\}`, 'g')
+                const doubleBracePattern = new RegExp(`\\{\\{\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\}\\}`, 'g')
+
+                xmlContent = xmlContent.replace(singleBracePattern, stringValue)
+                xmlContent = xmlContent.replace(doubleBracePattern, stringValue)
+
+                logger.debug(`Replaced ${key} with ${stringValue}`)
+            })
+
+            // Update the document XML
+            this.zip.file('word/document.xml', xmlContent)
+
+            // Generate buffer
+            const buffer = this.zip.generate({
+                type: 'nodebuffer',
+                compression: 'DEFLATE',
+            }) as Buffer
+
+            logger.info('Manual rendering completed successfully')
+            return buffer
+        } catch (error) {
+            logger.error('Manual rendering failed:', error)
+            throw new Error(`Manual rendering failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
     }
 

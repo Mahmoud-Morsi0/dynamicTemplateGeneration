@@ -29,20 +29,38 @@ export class DocxParser {
 
     constructor(buffer: Buffer) {
         try {
+            if (!buffer || buffer.length === 0) {
+                throw new Error('Empty or invalid buffer provided')
+            }
+
             this.zip = new PizZip(buffer)
+
+            // Initialize Docxtemplater with minimal configuration to avoid tag conflicts
             this.doc = new Docxtemplater(this.zip, {
-                paragraphLoop: true,
-                linebreaks: true,
+                delimiters: {
+                    start: '___PLACEHOLDER_START___',
+                    end: '___PLACEHOLDER_END___'
+                }
             })
         } catch (error) {
-            throw new Error(`Failed to parse DOCX file: ${error instanceof Error ? error.message : 'Unknown error'}`)
+            if (error instanceof Error) {
+                // Handle specific docxtemplater errors
+                if (error.message.includes('Multi error') || error.message.includes('duplicate')) {
+                    throw new Error('Document contains conflicting placeholder formats. Please use either {variable} or {{variable}} consistently.')
+                }
+                if (error.message.includes('zip')) {
+                    throw new Error('File is not a valid DOCX format')
+                }
+                throw new Error(`DOCX parsing error: ${error.message}`)
+            }
+            throw new Error('Unknown error occurred while parsing DOCX file')
         }
     }
 
     private parsePlaceholder(text: string): ParsedPlaceholder | null {
         // Match both {{ variable | key=value }} and {variable} formats
-        const doubleRegex = /\{\{\s*([^|}]+)(?:\s*\|\s*([^}]+))?\s*\}\}/g
-        const singleRegex = /\{([^{}|]+)\}/g
+        const doubleRegex = /\{\{\s*([^|}]+)(?:\s*\|\s*([^}]+))?\s*\}\}/
+        const singleRegex = /\{([^{}|]+)\}/
 
         let match = doubleRegex.exec(text)
         let modifiers = ''
@@ -54,7 +72,13 @@ export class DocxParser {
             modifiers = match[2] || ''
         }
 
-        const key = match[1]?.trim() || ''
+        let key = match[1]?.trim() || match[3]?.trim() || ''
+
+        // Clean up the key - remove extra spaces and normalize
+        key = key.replace(/\s+/g, ' ').trim()
+
+        // If key is empty, skip this placeholder
+        if (!key) return null
 
         const result: ParsedPlaceholder = { key, type: 'text' }
 
@@ -119,15 +143,23 @@ export class DocxParser {
             placeholder.format = 'email'
             return 'text'
         }
-        if (keyLower.includes('date') || keyLower.includes('birth') || keyLower.includes('hire')) {
+        if (keyLower.includes('date') || keyLower.includes('birth') || keyLower.includes('hire') ||
+            keyLower.includes('created') || keyLower.includes('updated') || keyLower.includes('contract date')) {
             return 'date'
         }
         if (keyLower.includes('salary') || keyLower.includes('amount') || keyLower.includes('price') ||
-            keyLower.includes('number') || keyLower.includes('count')) {
+            keyLower.includes('number') || keyLower.includes('count') || keyLower.includes('cost') ||
+            keyLower.includes('fee') || keyLower.includes('total')) {
             return 'number'
         }
-        if (keyLower.includes('logo') || keyLower.includes('image') || keyLower.includes('photo')) {
+        if (keyLower.includes('logo') || keyLower.includes('image') || keyLower.includes('photo') ||
+            keyLower.includes('picture') || keyLower.includes('avatar')) {
             return 'image'
+        }
+        if (keyLower.includes('description') || keyLower.includes('comment') || keyLower.includes('note') ||
+            keyLower.includes('remarks') || keyLower.includes('details')) {
+            placeholder.maxLength = 500
+            return 'text'
         }
 
         return 'text'
@@ -144,8 +176,8 @@ export class DocxParser {
 
             const itemShape: Record<string, FieldSpec> = {}
 
-            // Parse placeholders within the loop
-            const placeholderRegex = /\{\{\s*([^|}]+)(?:\s*\|\s*([^}]+))?\s*\}\}/g
+            // Parse placeholders within the loop - both {{ variable }} and {variable} formats
+            const placeholderRegex = /(?:\{\{\s*([^|}]+)(?:\s*\|\s*([^}]+))?\s*\}\}|\{([^{}|]+)\})/g
             let placeholderMatch
 
             while ((placeholderMatch = placeholderRegex.exec(loopContent)) !== null) {
@@ -190,44 +222,101 @@ export class DocxParser {
 
     public parse(): { fields: FieldSpec[]; loops: ParsedLoop[] } {
         try {
-            const content = this.doc.getFullText()
+            let content: string
+            try {
+                // Extract raw text from the zip file to avoid Docxtemplater parsing conflicts
+                const documentXml = this.zip.files['word/document.xml']
+                if (!documentXml) {
+                    throw new Error('Invalid DOCX structure - missing document.xml')
+                }
+
+                const xmlContent = documentXml.asText()
+                // Simple text extraction from XML (removing tags)
+                content = xmlContent
+                    .replace(/<[^>]*>/g, ' ')  // Remove XML tags
+                    .replace(/\s+/g, ' ')      // Normalize whitespace
+                    .trim()
+
+                // Fallback to getFullText if direct extraction fails
+                if (!content) {
+                    content = this.doc.getFullText()
+                }
+            } catch (error) {
+                // Fallback to Docxtemplater's getFullText method
+                try {
+                    content = this.doc.getFullText()
+                } catch (fallbackError) {
+                    throw new Error('Failed to extract text from DOCX file - file may be corrupted or password protected')
+                }
+            }
+
+            if (!content || content.trim().length === 0) {
+                return { fields: [], loops: [] }
+            }
+
             const fields: FieldSpec[] = []
             const loops: ParsedLoop[] = []
+            const seenKeys = new Set<string>()
 
-            // Parse regular placeholders - both {{ variable }} and {variable} formats
-            const doubleRegex = /\{\{\s*([^|}]+)(?:\s*\|\s*([^}]+))?\s*\}\}/g
-            const singleRegex = /\{([^{}|]+)\}/g
+            try {
+                // Parse regular placeholders - handle both formats but prioritize complete matches
+                const placeholders = new Set<string>()
 
-            let match
-            // Parse double braces first
-            while ((match = doubleRegex.exec(content)) !== null) {
-                const parsed = this.parsePlaceholder(match[0])
-                if (parsed) {
-                    fields.push(this.convertToFieldSpec(parsed))
+                // First pass: find all double brace placeholders
+                const doubleRegex = /\{\{\s*([^}]+?)\s*\}\}/g
+                let match
+                while ((match = doubleRegex.exec(content)) !== null) {
+                    placeholders.add(match[0])
                 }
-            }
 
-            // Parse single braces
-            while ((match = singleRegex.exec(content)) !== null) {
-                const parsed = this.parsePlaceholder(match[0])
-                if (parsed) {
-                    fields.push(this.convertToFieldSpec(parsed))
+                // Second pass: find single brace placeholders that don't conflict with double braces
+                const singleRegex = /\{([^{}]+?)\}/g
+                const singleContent = content.replace(/\{\{[^}]+?\}\}/g, '___DOUBLE_BRACE___')
+                while ((match = singleRegex.exec(singleContent)) !== null) {
+                    placeholders.add(match[0])
                 }
-            }
 
-            // Parse loops
-            const parsedLoops = this.parseLoops(content)
-            for (const loop of parsedLoops) {
-                fields.push({
-                    key: loop.key,
-                    type: 'array',
-                    itemShape: loop.itemShape,
-                })
+                // Parse all found placeholders
+                for (const placeholder of placeholders) {
+                    try {
+                        const parsed = this.parsePlaceholder(placeholder)
+                        if (parsed && parsed.key && !seenKeys.has(parsed.key)) {
+                            seenKeys.add(parsed.key)
+                            fields.push(this.convertToFieldSpec(parsed))
+                        }
+                    } catch (parseError) {
+                        // Continue parsing other placeholders if one fails
+                        console.warn('Failed to parse placeholder:', placeholder, parseError)
+                    }
+                }
+
+                // Parse loops
+                try {
+                    const parsedLoops = this.parseLoops(content)
+                    for (const loop of parsedLoops) {
+                        if (loop.key && !seenKeys.has(loop.key)) {
+                            seenKeys.add(loop.key)
+                            fields.push({
+                                key: loop.key,
+                                type: 'array',
+                                itemShape: loop.itemShape,
+                            })
+                        }
+                    }
+                } catch (loopError) {
+                    console.warn('Failed to parse loops:', loopError)
+                }
+
+            } catch (regexError) {
+                throw new Error('Failed to parse placeholders - invalid regex pattern or document structure')
             }
 
             return { fields, loops }
         } catch (error) {
-            throw new Error(`Failed to parse document content: ${error instanceof Error ? error.message : 'Unknown error'}`)
+            if (error instanceof Error) {
+                throw error
+            }
+            throw new Error('Unknown error occurred while parsing document content')
         }
     }
 }

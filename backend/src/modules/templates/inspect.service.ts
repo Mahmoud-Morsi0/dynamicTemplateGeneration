@@ -27,8 +27,23 @@ export class InspectService {
         }
 
         // Parse the document
-        const parser = new DocxParser(buffer)
-        const { fields } = parser.parse()
+        let parser: DocxParser
+        let fields: FieldSpec[]
+
+        try {
+            parser = new DocxParser(buffer)
+        } catch (error) {
+            logger.error('Failed to create DocxParser:', error)
+            throw new Error(error instanceof Error ? error.message : 'Failed to parse DOCX file')
+        }
+
+        try {
+            const parseResult = parser.parse()
+            fields = parseResult.fields
+        } catch (error) {
+            logger.error('Failed to parse document:', error)
+            throw new Error(error instanceof Error ? error.message : 'Failed to extract fields from DOCX file')
+        }
 
         // Generate Zod schema
         const zodSchema = generateZodSchema(fields)
