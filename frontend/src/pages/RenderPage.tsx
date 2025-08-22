@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
+
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { FileText, Download, ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 const RenderPage: React.FC = () => {
-  const { t, i18n } = useTranslation()
+
   const [templateSpec, setTemplateSpec] = useState<any>(null)
   const [formData, setFormData] = useState<Record<string, any>>({})
   
@@ -111,22 +111,22 @@ const RenderPage: React.FC = () => {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Template ID:</span>
-                  <p className="font-mono text-xs bg-gray-100 dark:bg-gray-800 p-1 rounded mt-1 truncate">
+                  <span className="text-muted-foreground">Template ID:</span>
+                  <p className="font-mono text-xs bg-muted p-1 rounded mt-1 truncate">
                     {templateSpec.templateId}
                   </p>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Version:</span>
-                  <p className="font-medium">{templateSpec.version}</p>
+                  <span className="text-muted-foreground">Version:</span>
+                  <p className="font-medium text-foreground">{templateSpec.version}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Fields:</span>
-                  <p className="font-medium">{templateSpec.fields.length}</p>
+                  <span className="text-muted-foreground">Fields:</span>
+                  <p className="font-medium text-foreground">{templateSpec.fields.length}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Language:</span>
-                  <p className="font-medium">{i18n.language.toUpperCase()}</p>
+                  <span className="text-muted-foreground">Language:</span>
+                  <p className="font-medium text-foreground">EN</p>
                 </div>
               </div>
             </CardContent>
@@ -163,12 +163,12 @@ const RenderPage: React.FC = () => {
                 {renderMutation.isPending ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-                    {t('render.rendering')}
+                    Generating document...
                   </>
                 ) : (
                   <>
                     <Download className="mr-2 h-5 w-5" />
-                    {t('render.download')}
+                    Download Document
                   </>
                 )}
               </Button>
@@ -183,14 +183,14 @@ const RenderPage: React.FC = () => {
               transition={{ duration: 0.3 }}
               className="mt-6"
             >
-              <Card className="border-red-200 bg-red-50 dark:bg-red-900/20">
+              <Card className="border-destructive/50 bg-destructive/10">
                 <CardContent className="pt-6">
-                  <div className="flex items-center gap-3 text-red-700 dark:text-red-400">
-                    <div className="h-5 w-5 rounded-full bg-red-200 dark:bg-red-800 flex items-center justify-center">
+                  <div className="flex items-center gap-3 text-destructive">
+                    <div className="h-5 w-5 rounded-full bg-destructive/20 flex items-center justify-center">
                       !
                     </div>
                     <div>
-                      <p className="font-medium">{t('render.error')}</p>
+                      <p className="font-medium">Failed to generate document</p>
                       <p className="text-sm">
                         {renderMutation.error?.message || 'Unknown error occurred'}
                       </p>

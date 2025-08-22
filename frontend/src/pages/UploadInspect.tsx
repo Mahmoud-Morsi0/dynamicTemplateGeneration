@@ -82,32 +82,32 @@ const UploadInspect: React.FC = () => {
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
                   isDragActive
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:border-primary/50'
                 }`}
               >
                 <input {...getInputProps()} />
-                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 {uploadedFile ? (
                   <div>
                     <FileText className="mx-auto h-8 w-8 text-green-500 mb-2" />
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    <p className="text-sm font-medium text-foreground">
                       {uploadedFile.name}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                   </div>
                 ) : (
                   <div>
-                    <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                      {t('upload.dragDrop')}
+                    <p className="text-lg font-medium text-foreground mb-2">
+                      Drag and drop a DOCX file here, or click to select
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {t('upload.fileType')}
+                    <p className="text-sm text-muted-foreground">
+                      Only DOCX files are supported
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      {t('upload.maxSize', { size: 10 })}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Maximum file size: 10MB
                     </p>
                   </div>
                 )}
@@ -144,12 +144,12 @@ const UploadInspect: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Card className="border-red-200 bg-red-50 dark:bg-red-900/20">
+              <Card className="border-destructive/50 bg-destructive/10">
                 <CardContent className="pt-6">
-                  <div className="flex items-center gap-3 text-red-700 dark:text-red-400">
+                  <div className="flex items-center gap-3 text-destructive">
                     <AlertCircle className="h-5 w-5" />
                     <div>
-                      <p className="font-medium">{t('upload.error')}</p>
+                      <p className="font-medium">Failed to inspect template</p>
                       <p className="text-sm">
                         {inspectMutation.error?.message || 'Unknown error occurred'}
                       </p>
@@ -166,52 +166,52 @@ const UploadInspect: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Card className="border-green-200 bg-green-50 dark:bg-green-900/20">
+              <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
                     <CheckCircle className="h-5 w-5" />
-                    {t('upload.success')}
+                    Template inspected successfully!
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                      <h4 className="font-medium text-foreground mb-2">
                         Template Information
                       </h4>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="text-gray-500 dark:text-gray-400">Template ID:</span>
-                          <p className="font-mono text-xs bg-gray-100 dark:bg-gray-800 p-1 rounded mt-1">
+                          <span className="text-muted-foreground">Template ID:</span>
+                          <p className="font-mono text-xs bg-muted p-1 rounded mt-1">
                             {inspectResult.templateId}
                           </p>
                         </div>
                         <div>
-                          <span className="text-gray-500 dark:text-gray-400">Version:</span>
-                          <p className="font-medium">{inspectResult.version}</p>
+                          <span className="text-muted-foreground">Version:</span>
+                          <p className="font-medium text-foreground">{inspectResult.version}</p>
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                      <h4 className="font-medium text-foreground mb-2">
                         Extracted Fields ({inspectResult.fields.length})
                       </h4>
                       <div className="grid gap-2">
                         {inspectResult.fields.map((field: any) => (
                           <div
                             key={field.key}
-                            className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border"
+                            className="flex items-center justify-between p-2 bg-background rounded border border-border"
                           >
                             <div>
-                              <span className="font-medium">{field.key}</span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                              <span className="font-medium text-foreground">{field.key}</span>
+                              <span className="text-xs text-muted-foreground ml-2">
                                 ({field.type})
                               </span>
                             </div>
                             {field.required && (
-                              <span className="text-xs bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 px-2 py-1 rounded">
-                                {t('common.required')}
+                              <span className="text-xs bg-destructive/20 text-destructive px-2 py-1 rounded">
+                                Required
                               </span>
                             )}
                           </div>

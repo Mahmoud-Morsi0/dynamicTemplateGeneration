@@ -177,19 +177,19 @@ const Docs: React.FC = () => {
                     <div className="flex items-center gap-3 mb-2">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
                         endpoint.method === 'POST' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-300'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-300'
                       }`}>
                         {endpoint.method}
                       </span>
-                      <code className="text-sm font-mono bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded">
+                      <code className="text-sm font-mono bg-muted px-2 py-1 rounded">
                         {endpoint.path}
                       </code>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                    <p className="text-sm text-muted-foreground mb-2">
                       {endpoint.description}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       Body: {endpoint.body}
                     </p>
                   </motion.div>
@@ -216,12 +216,12 @@ const Docs: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: 0.2 }}
-                  className="border rounded-lg p-4 bg-white dark:bg-gray-800"
+                  className="border border-border rounded-lg p-4 bg-card"
                 >
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                  <h4 className="font-medium text-foreground mb-2">
                     Employment Offer Template
                   </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                  <p className="text-sm text-muted-foreground mb-3">
                     Contains text, number, date, select, and image fields
                   </p>
                   <Button variant="outline" size="sm" disabled>
@@ -234,12 +234,12 @@ const Docs: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: 0.3 }}
-                  className="border rounded-lg p-4 bg-white dark:bg-gray-800"
+                  className="border border-border rounded-lg p-4 bg-card"
                 >
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                  <h4 className="font-medium text-foreground mb-2">
                     Benefits Form Template
                   </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                  <p className="text-sm text-muted-foreground mb-3">
                     Includes loops for dependents and mixed language support
                   </p>
                   <Button variant="outline" size="sm" disabled>
@@ -259,11 +259,11 @@ const Docs: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-sm font-medium text-blue-600 dark:text-blue-400">
+                  <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-sm font-medium text-primary">
                     1
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">Create a DOCX Template</h4>
+                    <h4 className="font-medium text-foreground">Create a DOCX Template</h4>
                     <p className="text-sm text-muted-foreground">
                       Create a Word document with placeholders using the syntax above
                     </p>
@@ -271,11 +271,11 @@ const Docs: React.FC = () => {
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-sm font-medium text-blue-600 dark:text-blue-400">
+                  <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-sm font-medium text-primary">
                     2
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">Upload and Inspect</h4>
+                    <h4 className="font-medium text-foreground">Upload and Inspect</h4>
                     <p className="text-sm text-muted-foreground">
                       Upload your template to extract form field specifications
                     </p>
@@ -283,11 +283,11 @@ const Docs: React.FC = () => {
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-sm font-medium text-blue-600 dark:text-blue-400">
+                  <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-sm font-medium text-primary">
                     3
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">Fill and Generate</h4>
+                    <h4 className="font-medium text-foreground">Fill and Generate</h4>
                     <p className="text-sm text-muted-foreground">
                       Fill out the generated form and download your completed document
                     </p>
