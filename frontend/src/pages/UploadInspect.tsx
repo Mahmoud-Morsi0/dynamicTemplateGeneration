@@ -9,7 +9,7 @@ import { useInspectTemplate } from '@/lib/queries'
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react'
 
 const UploadInspect: React.FC = () => {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [inspectResult, setInspectResult] = useState<any>(null)
@@ -52,8 +52,7 @@ const UploadInspect: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-16">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -62,11 +61,11 @@ const UploadInspect: React.FC = () => {
         >
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              {t('upload.title')}
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+              Upload Template
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              {t('upload.subtitle')}
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Upload a DOCX file to extract form fields and create dynamic documents
             </p>
           </div>
 
@@ -232,7 +231,6 @@ const UploadInspect: React.FC = () => {
           )}
         </motion.div>
       </div>
-    </div>
   )
 }
 

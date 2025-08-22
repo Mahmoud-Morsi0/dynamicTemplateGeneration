@@ -36,8 +36,8 @@ const resources = {
             'theme.dark': 'Dark Mode',
 
             // Home page
-            'home.title': 'Smart Document Template Generator',
-            'home.subtitle': 'Upload DOCX templates and generate dynamic forms',
+            'home.title': 'Dynamic Form Generator',
+            'home.subtitle': 'Upload DOCX templates and generate dynamic forms for document creation',
             'home.uploadButton': 'Upload Template',
             'home.renderButton': 'Render Document',
 
@@ -112,8 +112,8 @@ const resources = {
             'theme.dark': 'الوضع الداكن',
 
             // Home page
-            'home.title': 'مولد قوالب المستندات الذكي',
-            'home.subtitle': 'ارفع قوالب DOCX وأنشئ نماذج ديناميكية',
+            'home.title': 'مولد النماذج الديناميكية',
+            'home.subtitle': 'ارفع قوالب DOCX وأنشئ نماذج ديناميكية لإنشاء المستندات',
             'home.uploadButton': 'رفع قالب',
             'home.renderButton': 'إنشاء مستند',
 

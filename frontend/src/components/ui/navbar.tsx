@@ -59,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isDark, toggleTheme }) => {
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold text-foreground">
-                DocGen
+                DynamicFormGen
               </span>
             </Link>
           </div>

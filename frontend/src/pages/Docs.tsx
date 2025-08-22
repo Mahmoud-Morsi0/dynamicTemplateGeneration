@@ -1,5 +1,5 @@
 import React from 'react'
-import { useTranslation } from 'react-i18next'
+
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,13 +7,17 @@ import { ArrowLeft, FileText, Code, Download } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 const Docs: React.FC = () => {
-  const { t } = useTranslation()
 
   const placeholderExamples = [
     {
-      title: 'Basic Text Field',
+      title: 'Simple Text Field',
+      code: '{employeeName}',
+      description: 'Basic text input field (auto-detected as text type)',
+    },
+    {
+      title: 'Advanced Text Field',
       code: '{{ employeeName | type=text | label="Employee Name" | required }}',
-      description: 'Simple text input with label and required validation',
+      description: 'Text input with custom label and required validation',
     },
     {
       title: 'Number Field',
@@ -21,9 +25,14 @@ const Docs: React.FC = () => {
       description: 'Numeric input with minimum value and step increment',
     },
     {
-      title: 'Date Field',
+      title: 'Simple Date Field',
+      code: '{hireDate}',
+      description: 'Auto-detected date field (when name contains "date")',
+    },
+    {
+      title: 'Advanced Date Field',
       code: '{{ hireDate | type=date }}',
-      description: 'Date picker input',
+      description: 'Explicit date picker input',
     },
     {
       title: 'Select Field',
@@ -60,21 +69,20 @@ const Docs: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-16">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="max-w-6xl mx-auto"
+          className="max-w-4xl mx-auto"
         >
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
               Documentation
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Learn how to use the Smart Document Template Generator
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Learn how to use the Dynamic Form Generator to create documents from DOCX templates
             </p>
           </div>
 
@@ -97,9 +105,28 @@ const Docs: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Use these placeholder patterns in your DOCX templates to define form fields:
-              </p>
+              <div className="mb-6">
+                <p className="text-muted-foreground mb-4">
+                  Use these placeholder patterns in your DOCX templates to define form fields. 
+                  The system supports two formats:
+                </p>
+                <div className="grid md:grid-cols-2 gap-4 mb-6">
+                  <div className="border border-border rounded-lg p-4 bg-muted/50">
+                    <h4 className="font-medium text-foreground mb-2">Simple Format</h4>
+                    <code className="text-sm">{'{variable}'}</code>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Auto-detects field type based on variable name
+                    </p>
+                  </div>
+                  <div className="border border-border rounded-lg p-4 bg-muted/50">
+                    <h4 className="font-medium text-foreground mb-2">Advanced Format</h4>
+                    <code className="text-sm">{'{{ variable | options }}'}</code>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Full control over field type and validation
+                    </p>
+                  </div>
+                </div>
+              </div>
               
               <div className="grid gap-6">
                 {placeholderExamples.map((example, index) => (
@@ -108,15 +135,15 @@ const Docs: React.FC = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="border rounded-lg p-4 bg-white dark:bg-gray-800"
+                    className="border border-border rounded-lg p-4 bg-card"
                   >
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                    <h4 className="font-medium text-foreground mb-2">
                       {example.title}
                     </h4>
-                    <pre className="bg-gray-100 dark:bg-gray-900 p-3 rounded text-sm overflow-x-auto mb-2">
+                    <pre className="bg-muted p-3 rounded text-sm overflow-x-auto mb-2">
                       <code>{example.code}</code>
                     </pre>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                    <p className="text-sm text-muted-foreground">
                       {example.description}
                     </p>
                   </motion.div>
@@ -134,7 +161,7 @@ const Docs: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
+              <p className="text-muted-foreground mb-6">
                 REST API endpoints for programmatic access:
               </p>
               
@@ -145,7 +172,7 @@ const Docs: React.FC = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="border rounded-lg p-4 bg-white dark:bg-gray-800"
+                    className="border border-border rounded-lg p-4 bg-card"
                   >
                     <div className="flex items-center gap-3 mb-2">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -180,7 +207,7 @@ const Docs: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Download sample templates to get started:
               </p>
               
@@ -237,7 +264,7 @@ const Docs: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-white">Create a DOCX Template</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                    <p className="text-sm text-muted-foreground">
                       Create a Word document with placeholders using the syntax above
                     </p>
                   </div>
@@ -249,7 +276,7 @@ const Docs: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-white">Upload and Inspect</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                    <p className="text-sm text-muted-foreground">
                       Upload your template to extract form field specifications
                     </p>
                   </div>
@@ -261,7 +288,7 @@ const Docs: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-white">Fill and Generate</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                    <p className="text-sm text-muted-foreground">
                       Fill out the generated form and download your completed document
                     </p>
                   </div>
@@ -271,7 +298,6 @@ const Docs: React.FC = () => {
           </Card>
         </motion.div>
       </div>
-    </div>
   )
 }
 

@@ -83,8 +83,7 @@ const RenderPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-16">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -93,11 +92,11 @@ const RenderPage: React.FC = () => {
         >
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              {t('render.title')}
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+              Render Document
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              {t('render.subtitle')}
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Fill in the form and generate your document
             </p>
           </div>
 
@@ -203,7 +202,6 @@ const RenderPage: React.FC = () => {
           )}
         </motion.div>
       </div>
-    </div>
   )
 }
 
