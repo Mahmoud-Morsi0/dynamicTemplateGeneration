@@ -1,0 +1,88 @@
+{
+  "info": {
+    "name": "Smart Document Template Generator API",
+    "description": "API collection for testing the Smart Document Template Generator",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Inspect Template",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/templates/inspect",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "templates", "inspect"]
+        }
+      }
+    },
+    {
+      "name": "Render Document",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"templateId\": \"your-template-id\",\n  \"data\": {\n    \"employeeName\": \"John Doe\",\n    \"salary\": 50000,\n    \"hireDate\": \"2024-01-15\",\n    \"employmentType\": \"Full-time\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/templates/render/docx",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "templates", "render", "docx"]
+        }
+      }
+    },
+    {
+      "name": "Get Template Spec",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/templates/{{templateId}}/spec",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "templates", "{{templateId}}", "spec"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "templateId",
+      "value": "your-template-id-here",
+      "type": "string"
+    }
+  ]
+}
