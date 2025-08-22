@@ -161,10 +161,15 @@ export class DocxRenderer {
 
     public render(data: Record<string, any>): Buffer {
         try {
+            logger.info(`Rendering document with isManualMode: ${this.isManualMode}`)
+            logger.info('Render data:', JSON.stringify(data, null, 2))
+
             if (this.isManualMode) {
+                logger.info('Using manual rendering mode')
                 return this.renderManually(data)
             }
 
+            logger.info('Using Docxtemplater rendering mode')
             // Set the template variables
             this.doc.setData(data)
 
@@ -184,6 +189,7 @@ export class DocxRenderer {
     private renderManually(data: Record<string, any>): Buffer {
         try {
             logger.info('Performing manual text replacement rendering')
+            logger.info('Data to replace:', JSON.stringify(data, null, 2))
 
             // Get the main document XML
             const documentXml = this.zip.files['word/document.xml']
@@ -192,21 +198,61 @@ export class DocxRenderer {
             }
 
             let xmlContent = documentXml.asText()
+            logger.info('Document content preview (first 500 chars):', xmlContent.substring(0, 500))
+
+            // Find all placeholders in the document first for debugging
+            const allPlaceholders = [
+                ...xmlContent.matchAll(/\{[^{}]*\}/g),
+                ...xmlContent.matchAll(/\{\{[^}]*\}\}/g)
+            ]
+            logger.info('Found placeholders in document:', allPlaceholders.map(m => m[0]))
+
+            let replacementCount = 0
 
             // Replace all placeholders manually
-            // Handle both {variable} and {{variable}} formats
+            // Handle both {variable} and {{variable}} formats, including advanced syntax
             Object.entries(data).forEach(([key, value]) => {
                 const stringValue = String(value || '')
+                const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-                // Replace both single and double brace formats
-                const singleBracePattern = new RegExp(`\\{\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\}`, 'g')
-                const doubleBracePattern = new RegExp(`\\{\\{\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\}\\}`, 'g')
+                logger.info(`Processing key: "${key}" with value: "${stringValue}"`)
 
+                // Pattern 1: Simple single brace {key}
+                const singleBracePattern = new RegExp(`\\{\\s*${escapedKey}\\s*\\}`, 'g')
+
+                // Pattern 2: Simple double brace {{key}}
+                const doubleBracePattern = new RegExp(`\\{\\{\\s*${escapedKey}\\s*\\}\\}`, 'g')
+
+                // Pattern 3: Advanced double brace with modifiers {{key | ...}}
+                const advancedDoubleBracePattern = new RegExp(`\\{\\{\\s*${escapedKey}\\s*\\|[^}]*\\}\\}`, 'g')
+
+                // Count matches before replacement
+                const singleMatches = xmlContent.match(singleBracePattern) || []
+                const doubleMatches = xmlContent.match(doubleBracePattern) || []
+                const advancedMatches = xmlContent.match(advancedDoubleBracePattern) || []
+
+                logger.info(`Key "${key}": Found ${singleMatches.length} single, ${doubleMatches.length} double, ${advancedMatches.length} advanced matches`)
+
+                if (singleMatches.length > 0) logger.info(`Single matches for "${key}":`, singleMatches)
+                if (doubleMatches.length > 0) logger.info(`Double matches for "${key}":`, doubleMatches)
+                if (advancedMatches.length > 0) logger.info(`Advanced matches for "${key}":`, advancedMatches)
+
+                // Replace all patterns
+                const beforeLength = xmlContent.length
                 xmlContent = xmlContent.replace(singleBracePattern, stringValue)
                 xmlContent = xmlContent.replace(doubleBracePattern, stringValue)
+                xmlContent = xmlContent.replace(advancedDoubleBracePattern, stringValue)
+                const afterLength = xmlContent.length
 
-                logger.debug(`Replaced ${key} with ${stringValue}`)
+                if (beforeLength !== afterLength) {
+                    replacementCount++
+                    logger.info(`Successfully replaced "${key}" with "${stringValue}"`)
+                } else {
+                    logger.warn(`No replacements made for key "${key}"`)
+                }
             })
+
+            logger.info(`Total successful replacements: ${replacementCount}`)
 
             // Update the document XML
             this.zip.file('word/document.xml', xmlContent)
